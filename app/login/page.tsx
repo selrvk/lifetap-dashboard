@@ -25,6 +25,20 @@ export default function LoginPage() {
       : phone.startsWith("+")
       ? phone
       : "+63" + phone;
+
+    // ── Check if number is a registered personnel first ──
+    const supabase = createClient();
+    const { data: personnel } = await supabase
+      .from("personnel")
+      .select("id")
+      .eq("phone", normalized)
+      .single();
+
+    if (!personnel) {
+      setError("This number is not registered as personnel.");
+      return; // never calls Twilio
+    }
+
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({ phone: normalized });
     setLoading(false);
