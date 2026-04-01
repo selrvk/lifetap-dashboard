@@ -26,8 +26,6 @@ export default function LoginPage() {
       ? phone
       : "+63" + phone;
 
-    // ── Check if number is a registered personnel first ──
-    const supabase = createClient();
     const { data: personnel } = await supabase
       .from("personnel")
       .select("id")
@@ -36,7 +34,7 @@ export default function LoginPage() {
 
     if (!personnel) {
       setError("This number is not registered as personnel.");
-      return; // never calls Twilio
+      return;
     }
 
     setLoading(true);
@@ -58,7 +56,7 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (error) { setError(error.message); return; }
-    router.push("/dashboard/users");
+    router.push("/dashboard");
     router.refresh();
   }
 
@@ -68,59 +66,137 @@ export default function LoginPage() {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
         input:-webkit-autofill {
           -webkit-box-shadow: 0 0 0 1000px #f7fcfe inset !important;
           -webkit-text-fill-color: #0d2d35 !important;
         }
+
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         .fade-up { animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
         @keyframes spin { to { transform: rotate(360deg); } }
         .spinner { animation: spin 0.8s linear infinite; }
-        .lt-input:focus { outline: none; border-color: #1BAEE8 !important; box-shadow: 0 0 0 3px rgba(27,174,232,0.15); }
-        .submit-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(27,174,232,0.45) !important; }
+
+        .lt-input:focus {
+          outline: none;
+          border-color: #1BAEE8 !important;
+          box-shadow: 0 0 0 3px rgba(27,174,232,0.15);
+        }
+        .submit-btn:hover:not(:disabled) {
+          opacity: 0.9;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 24px rgba(27,174,232,0.45) !important;
+        }
         .submit-btn { transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s; }
         .back-btn:hover { color: #1BAEE8 !important; }
         .back-btn { transition: color 0.15s; }
+
+        /* ── Layout ── */
+        .login-root {
+          min-height: 100vh;
+          display: flex;
+          background: linear-gradient(160deg, #e6f6fd 0%, #edfaf6 60%, #f0fafa 100%);
+        }
+
+        /* Left decorative panel */
+        .login-panel {
+          flex: 1;
+          background: linear-gradient(145deg, #1BAEE8 0%, #3ECFB2 100%);
+          padding: 48px 52px;
+          flex-direction: column;
+          justify-content: space-between;
+          position: relative;
+          overflow: hidden;
+          display: flex;
+        }
+
+        /* Right form panel */
+        .login-form-wrap {
+          width: 100%;
+          max-width: 480px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 40px 32px;
+          background: white;
+          box-shadow: -8px 0 40px rgba(27,174,232,0.06);
+        }
+
+        /* Mobile: stack vertically, hide decorative panel */
+        @media (max-width: 767px) {
+          .login-root {
+            flex-direction: column;
+            background: white;
+          }
+
+          /* Compact top banner replaces the full left panel */
+          .login-panel {
+            flex: none;
+            min-height: unset;
+            padding: 24px 24px 28px;
+            flex-direction: column;
+            gap: 0;
+            justify-content: flex-start;
+          }
+
+          /* Hide the tagline/description copy on mobile — keep it clean */
+          .login-panel-tagline { display: none; }
+
+          /* Blobs scaled down */
+          .login-panel .blob-1 { width: 200px !important; height: 200px !important; top: -60px !important; right: -60px !important; }
+          .login-panel .blob-2 { display: none; }
+          .login-panel .blob-3 { display: none; }
+
+          .login-form-wrap {
+            max-width: 100%;
+            padding: 28px 20px 40px;
+            box-shadow: none;
+          }
+
+          /* Larger tap targets on mobile */
+          .lt-input {
+            font-size: 16px !important; /* prevents iOS zoom */
+            padding: 14px 16px !important;
+          }
+        }
+
+        /* Tablet: show panel but narrower */
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .login-panel {
+            padding: 36px 36px;
+          }
+          .login-form-wrap {
+            max-width: 400px;
+            padding: 32px 28px;
+          }
+        }
       `}</style>
 
-      <main style={{
-        minHeight: "100vh",
-        display: "flex",
-        background: "linear-gradient(160deg, #e6f6fd 0%, #edfaf6 60%, #f0fafa 100%)",
-      }}>
+      <main className="login-root">
 
-        {/* Left decorative panel — hidden on mobile, visible md+ */}
-        <div style={{
-          flex: 1,
-          background: "linear-gradient(145deg, #1BAEE8 0%, #3ECFB2 100%)",
-          padding: "48px 52px",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          position: "relative",
-          overflow: "hidden",
-          display: "flex",
-        }}>
-          {/* Decorative blobs */}
-          <div style={{ position: "absolute", width: 500, height: 500, borderRadius: "50%", background: "rgba(255,255,255,0.07)", top: -150, right: -150 }} />
-          <div style={{ position: "absolute", width: 350, height: 350, borderRadius: "50%", background: "rgba(255,255,255,0.05)", bottom: 60, left: -100 }} />
-          <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.08)", bottom: 300, right: 40 }} />
+        {/* ── Left decorative panel ── */}
+        <div className="login-panel">
+          <div className="blob-1" style={{ position: "absolute", width: 500, height: 500, borderRadius: "50%", background: "rgba(255,255,255,0.07)", top: -150, right: -150 }} />
+          <div className="blob-2" style={{ position: "absolute", width: 350, height: 350, borderRadius: "50%", background: "rgba(255,255,255,0.05)", bottom: 60, left: -100 }} />
+          <div className="blob-3" style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.08)", bottom: 300, right: 40 }} />
 
           {/* Logo */}
           <div style={{ position: "relative" }}>
             <Image
               src="/lifetap-logo-w-label.png"
               alt="LifeTap"
-              width={180}
-              height={68}
+              width={160}
+              height={60}
               style={{ objectFit: "contain", filter: "brightness(0) invert(1)" }}
             />
           </div>
 
-          {/* Tagline */}
-          <div style={{ position: "relative" }}>
+          {/* Tagline — hidden on mobile via CSS */}
+          <div className="login-panel-tagline" style={{ position: "relative", marginTop: "auto" }}>
             <div style={{
               display: "inline-block",
               background: "rgba(255,255,255,0.15)",
@@ -135,7 +211,7 @@ export default function LoginPage() {
             </div>
             <h2 style={{
               color: "white",
-              fontSize: 32,
+              fontSize: 30,
               fontWeight: 700,
               lineHeight: 1.25,
               marginBottom: 16,
@@ -143,36 +219,27 @@ export default function LoginPage() {
             }}>
               Emergency medical data,<br />when every second counts.
             </h2>
-            <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 15, lineHeight: 1.7 }}>
+            <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 14, lineHeight: 1.7 }}>
               Manage registered users, personnel, and city-level access — all in one place.
             </p>
           </div>
         </div>
 
-        {/* Right panel — form */}
-        <div style={{
-          width: "100%",
-          maxWidth: 480,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "40px 32px",
-          background: "white",
-          boxShadow: "-8px 0 40px rgba(27,174,232,0.06)",
-        }}>
+        {/* ── Right form panel ── */}
+        <div className="login-form-wrap">
           <div className="fade-up" style={{ width: "100%" }}>
 
             {/* Header */}
-            <div style={{ marginBottom: 32 }}>
+            <div style={{ marginBottom: 28 }}>
               <Image
                 src="/lifetap-app-icon.png"
                 alt="LifeTap icon"
-                width={56}
-                height={56}
-                style={{ borderRadius: 16, marginBottom: 20, boxShadow: "0 6px 24px rgba(27,174,232,0.2)" }}
+                width={52}
+                height={52}
+                style={{ borderRadius: 14, marginBottom: 18, boxShadow: "0 6px 24px rgba(27,174,232,0.2)" }}
               />
               <h1 style={{
-                fontSize: 26,
+                fontSize: 24,
                 fontWeight: 700,
                 color: "#0d2d35",
                 letterSpacing: "-0.02em",
@@ -279,7 +346,7 @@ export default function LoginPage() {
                     display: "block", width: "100%", marginTop: 10,
                     background: "none", border: "none",
                     color: "#b8d8e0", fontSize: 13, cursor: "pointer",
-                    padding: "8px 0", fontFamily: "Plus Jakarta Sans, sans-serif",
+                    padding: "10px 0", fontFamily: "Plus Jakarta Sans, sans-serif",
                   }}
                 >
                   ← Use a different number
@@ -287,7 +354,7 @@ export default function LoginPage() {
               </form>
             )}
 
-            <p style={{ textAlign: "center", color: "#d0e8ee", fontSize: 12, marginTop: 40 }}>
+            <p style={{ textAlign: "center", color: "#d0e8ee", fontSize: 12, marginTop: 36 }}>
               LifeTap Admin Portal · Batangas, Philippines
             </p>
           </div>
@@ -346,7 +413,7 @@ function SubmitButton({ loading, children }: { loading: boolean; children: React
       className="submit-btn"
       style={{
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        width: "100%", marginTop: 20, padding: "14px 0",
+        width: "100%", marginTop: 20, padding: "15px 0",
         background: loading
           ? "#a8dff0"
           : "linear-gradient(135deg, #1BAEE8 0%, #3ECFB2 100%)",

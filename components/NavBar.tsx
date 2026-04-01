@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -44,6 +44,7 @@ const NAV_LINKS = [
 export default function NavBar({ name, role, onLogout }: NavBarProps) {
   const path = usePathname();
   const [isPending, startTransition] = useTransition();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   function handleLogout() {
     startTransition(async () => {
@@ -52,116 +53,264 @@ export default function NavBar({ name, role, onLogout }: NavBarProps) {
   }
 
   return (
-    <header style={{
-      background: "white",
-      borderBottom: "1px solid #d4eef5",
-      height: 60,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "0 28px",
-      position: "sticky", top: 0, zIndex: 30,
-      boxShadow: "0 1px 8px rgba(27,174,232,0.06)",
-    }}>
+    <>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-      {/* ── Left: logo + nav ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-        <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <Image src="/lifetap-logo.png" alt="LifeTap" width={30} height={30} style={{ borderRadius: 8 }} />
-        </Link>
-        <div style={{ width: 1, height: 20, background: "#d4eef5" }} />
-        <nav style={{ display: "flex", gap: 4 }}>
-          {NAV_LINKS.map((l) => {
-            const active = path === l.href;
-            return (
-              <Link key={l.href} href={l.href} style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "6px 12px", borderRadius: 8,
-                textDecoration: "none", fontSize: 13, fontWeight: 600,
-                color: active ? "#1BAEE8" : "#7aabb5",
-                background: active ? "#e8f6fd" : "transparent",
-                transition: "all 0.15s",
-              }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d={l.icon} strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                {l.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+        .navbar-desktop-nav { display: flex; gap: 4px; }
+        .navbar-desktop-right { display: flex; align-items: center; gap: 12px; }
+        .navbar-hamburger { display: none; }
+        .navbar-mobile-menu { display: none; }
 
-      {/* ── Right: user info + logout ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        @media (max-width: 767px) {
+          .navbar-desktop-nav { display: none; }
+          .navbar-desktop-right { display: none; }
+          .navbar-hamburger { display: flex; }
+          .navbar-mobile-menu {
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 60px;
+            left: 0; right: 0;
+            background: white;
+            border-bottom: 1.5px solid #d4eef5;
+            box-shadow: 0 8px 24px rgba(27,174,232,0.08);
+            z-index: 29;
+            padding: 12px 16px 16px;
+            gap: 4px;
+            animation: slideDown 0.2s cubic-bezier(0.16,1,0.3,1);
+          }
+          @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          .navbar-mobile-menu-hidden { display: none !important; }
+        }
 
-        {/* User avatar + name */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ textAlign: "right" }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#0d2d35", lineHeight: 1.2 }}>{name}</p>
-            <p style={{ fontSize: 11, color: "#9acdd8" }}>{ROLE_LABELS[role] ?? role}</p>
+        .nav-link-mobile {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 11px 14px;
+          border-radius: 10px;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 600;
+          color: #7aabb5;
+          transition: all 0.15s;
+        }
+        .nav-link-mobile:hover { background: #f0f8fb; color: #1BAEE8; }
+        .nav-link-mobile.active { background: #e8f6fd; color: #1BAEE8; }
+      `}</style>
+
+      <header style={{
+        background: "white",
+        borderBottom: "1px solid #d4eef5",
+        height: 60,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 20px",
+        position: "sticky", top: 0, zIndex: 30,
+        boxShadow: "0 1px 8px rgba(27,174,232,0.06)",
+      }}>
+
+        {/* ── Left: logo + desktop nav ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+            <Image src="/lifetap-logo.png" alt="LifeTap" width={30} height={30} style={{ borderRadius: 8 }} />
+          </Link>
+          <div style={{ width: 1, height: 20, background: "#d4eef5" }} />
+
+          {/* Desktop nav links */}
+          <nav className="navbar-desktop-nav">
+            {NAV_LINKS.map((l) => {
+              const active = path === l.href;
+              return (
+                <Link key={l.href} href={l.href} style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "6px 12px", borderRadius: 8,
+                  textDecoration: "none", fontSize: 13, fontWeight: 600,
+                  color: active ? "#1BAEE8" : "#7aabb5",
+                  background: active ? "#e8f6fd" : "transparent",
+                  transition: "all 0.15s",
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d={l.icon} strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {l.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* ── Desktop right: user + logout ── */}
+        <div className="navbar-desktop-right">
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ textAlign: "right" }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "#0d2d35", lineHeight: 1.2 }}>{name}</p>
+              <p style={{ fontSize: 11, color: "#9acdd8" }}>{ROLE_LABELS[role] ?? role}</p>
+            </div>
+            <div style={{
+              width: 34, height: 34, borderRadius: "50%",
+              background: "linear-gradient(135deg, #1BAEE8, #3ECFB2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" strokeLinecap="round" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
           </div>
+
+          <div style={{ width: 1, height: 20, background: "#d4eef5" }} />
+
+          <button
+            onClick={handleLogout}
+            disabled={isPending}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "7px 13px",
+              background: isPending ? "#f7fcfe" : "white",
+              border: "1.5px solid #d4eef5",
+              borderRadius: 8,
+              fontSize: 13, fontWeight: 600,
+              color: isPending ? "#b8d8e0" : "#e05c5c",
+              cursor: isPending ? "not-allowed" : "pointer",
+              transition: "all 0.15s",
+              fontFamily: "Plus Jakarta Sans, sans-serif",
+            }}
+            onMouseEnter={(e) => {
+              if (!isPending) {
+                (e.currentTarget as HTMLElement).style.background = "#fff5f5";
+                (e.currentTarget as HTMLElement).style.borderColor = "#f5a0a0";
+              }
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = isPending ? "#f7fcfe" : "white";
+              (e.currentTarget as HTMLElement).style.borderColor = "#d4eef5";
+            }}
+          >
+            {isPending ? (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                style={{ animation: "spin 0.7s linear infinite" }}>
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" strokeLinecap="round" strokeLinejoin="round" />
+                <polyline points="16 17 21 12 16 7" strokeLinecap="round" strokeLinejoin="round" />
+                <line x1="21" y1="12" x2="9" y2="12" strokeLinecap="round" />
+              </svg>
+            )}
+            {isPending ? "Signing out…" : "Sign out"}
+          </button>
+        </div>
+
+        {/* ── Mobile right: avatar + hamburger ── */}
+        <div className="navbar-hamburger" style={{ alignItems: "center", gap: 10 }}>
+          {/* Mini avatar */}
           <div style={{
-            width: 34, height: 34, borderRadius: "50%",
+            width: 32, height: 32, borderRadius: "50%",
             background: "linear-gradient(135deg, #1BAEE8, #3ECFB2)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" strokeLinecap="round" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+
+          {/* Hamburger button */}
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            style={{
+              display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
+              gap: 5, width: 36, height: 36,
+              background: menuOpen ? "#e8f6fd" : "transparent",
+              border: "1.5px solid #d4eef5",
+              borderRadius: 8, cursor: "pointer", padding: 0,
+              transition: "background 0.15s",
+            }}
+          >
+            <span style={{ width: 16, height: 2, background: menuOpen ? "#1BAEE8" : "#7aabb5", borderRadius: 2, transition: "all 0.2s", transform: menuOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
+            <span style={{ width: 16, height: 2, background: menuOpen ? "#1BAEE8" : "#7aabb5", borderRadius: 2, transition: "all 0.2s", opacity: menuOpen ? 0 : 1 }} />
+            <span style={{ width: 16, height: 2, background: menuOpen ? "#1BAEE8" : "#7aabb5", borderRadius: 2, transition: "all 0.2s", transform: menuOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
+          </button>
+        </div>
+      </header>
+
+      {/* ── Mobile dropdown menu ── */}
+      <div className={`navbar-mobile-menu${menuOpen ? "" : " navbar-mobile-menu-hidden"}`}>
+        {/* User info row */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "10px 14px 14px",
+          borderBottom: "1px solid #edf5f8",
+          marginBottom: 8,
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+            background: "linear-gradient(135deg, #1BAEE8, #3ECFB2)",
+            display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" strokeLinecap="round" />
               <circle cx="12" cy="7" r="4" />
             </svg>
           </div>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "#0d2d35" }}>{name}</p>
+            <p style={{ fontSize: 12, color: "#9acdd8" }}>{ROLE_LABELS[role] ?? role}</p>
+          </div>
         </div>
 
-        {/* Divider */}
-        <div style={{ width: 1, height: 20, background: "#d4eef5" }} />
+        {/* Nav links */}
+        {NAV_LINKS.map((l) => {
+          const active = path === l.href;
+          return (
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={() => setMenuOpen(false)}
+              className={`nav-link-mobile${active ? " active" : ""}`}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d={l.icon} strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {l.label}
+            </Link>
+          );
+        })}
 
-        {/* Logout button */}
+        {/* Logout */}
         <button
-          onClick={handleLogout}
+          onClick={() => { setMenuOpen(false); handleLogout(); }}
           disabled={isPending}
           style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "7px 13px",
-            background: isPending ? "#f7fcfe" : "white",
-            border: "1.5px solid #d4eef5",
-            borderRadius: 8,
-            fontSize: 13, fontWeight: 600,
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "11px 14px",
+            marginTop: 4,
+            borderTop: "1px solid #edf5f8",
+            background: "none", border: "none",
+            width: "100%", textAlign: "left",
+            fontSize: 14, fontWeight: 600,
             color: isPending ? "#b8d8e0" : "#e05c5c",
             cursor: isPending ? "not-allowed" : "pointer",
-            transition: "all 0.15s",
+            borderRadius: 10,
             fontFamily: "Plus Jakarta Sans, sans-serif",
           }}
-          onMouseEnter={(e) => {
-            if (!isPending) {
-              (e.currentTarget as HTMLElement).style.background = "#fff5f5";
-              (e.currentTarget as HTMLElement).style.borderColor = "#f5a0a0";
-            }
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = isPending ? "#f7fcfe" : "white";
-            (e.currentTarget as HTMLElement).style.borderColor = "#d4eef5";
-          }}
         >
-          {isPending ? (
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-              style={{ animation: "spin 0.7s linear infinite" }}>
-              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
-                strokeLinecap="round" />
-            </svg>
-          ) : (
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" strokeLinecap="round" strokeLinejoin="round" />
-              <polyline points="16 17 21 12 16 7" strokeLinecap="round" strokeLinejoin="round" />
-              <line x1="21" y1="12" x2="9" y2="12" strokeLinecap="round" />
-            </svg>
-          )}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" strokeLinecap="round" strokeLinejoin="round" />
+            <polyline points="16 17 21 12 16 7" strokeLinecap="round" strokeLinejoin="round" />
+            <line x1="21" y1="12" x2="9" y2="12" strokeLinecap="round" />
+          </svg>
           {isPending ? "Signing out…" : "Sign out"}
         </button>
-
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
-    </header>
+    </>
   );
 }
