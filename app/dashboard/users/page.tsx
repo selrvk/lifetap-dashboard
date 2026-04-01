@@ -12,6 +12,14 @@ export default async function UsersPage() {
 
   if (!authUser) redirect("/login");
 
+  const phone = authUser.phone ?? "";
+
+  const { data: me } = await supabase
+    .from("personnel")
+    .select("full_name, role")
+    .eq("phone", phone)
+    .single();
+
   const { data: users, error } = await supabase
     .from("users")
     .select("*")
@@ -23,7 +31,11 @@ export default async function UsersPage() {
 
   return (
     <div className="min-h-screen bg-[#0b0e14]">
-      <UsersTable users={(users as User[]) ?? []} />
+      <UsersTable
+        users={(users as User[]) ?? []}
+        personnelName={me?.full_name ?? "Administrator"}
+        personnelRole={me?.role ?? "admin"}
+      />
     </div>
   );
 }
