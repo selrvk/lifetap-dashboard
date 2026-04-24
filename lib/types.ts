@@ -36,3 +36,15 @@ export type Personnel = {
   created_at: string;
   last_login: string | null;
 };
+
+export type Report = {
+  id: string;
+  name: string;
+  date: string;
+  location: string;
+  responder_name: string;
+  responder_phone: string;
+  city: string | null;
+  entries: unknown[];
+  created_at: string;
+};
