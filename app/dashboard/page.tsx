@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import DashboardView from "./DashboardView";
 
@@ -20,13 +21,15 @@ export default async function DashboardPage() {
     .eq("phone", phone)
     .single();
 
+  const adminClient = createAdminClient();
+
   // ── Aggregate: users ──────────────────────────────────────────────
-  const { data: users } = await supabase
+  const { data: users } = await adminClient
     .from("users")
     .select("bt, cty, od, is_public, a, c, meds");
 
   // ── Aggregate: personnel ──────────────────────────────────────────
-  const { data: personnel } = await supabase
+  const { data: personnel } = await adminClient
     .from("personnel")
     .select("role, is_active");
 

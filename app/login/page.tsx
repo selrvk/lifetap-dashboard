@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type Step = "phone" | "otp";
 
@@ -68,8 +69,8 @@ export default function LoginPage() {
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
         input:-webkit-autofill {
-          -webkit-box-shadow: 0 0 0 1000px #f7fcfe inset !important;
-          -webkit-text-fill-color: #0d2d35 !important;
+          -webkit-box-shadow: 0 0 0 1000px var(--surface-3) inset !important;
+          -webkit-text-fill-color: var(--text) !important;
         }
 
         @keyframes fadeUp {
@@ -81,10 +82,16 @@ export default function LoginPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .spinner { animation: spin 0.8s linear infinite; }
 
+        .lt-input {
+          background: var(--surface-3);
+          border: 1.5px solid var(--border);
+          color: var(--text);
+        }
+        .lt-input::placeholder { color: var(--text-5); }
         .lt-input:focus {
           outline: none;
-          border-color: #1BAEE8 !important;
-          box-shadow: 0 0 0 3px rgba(27,174,232,0.15);
+          border-color: var(--accent) !important;
+          box-shadow: 0 0 0 3px var(--ring);
         }
         .submit-btn:hover:not(:disabled) {
           opacity: 0.9;
@@ -92,14 +99,15 @@ export default function LoginPage() {
           box-shadow: 0 6px 24px rgba(27,174,232,0.45) !important;
         }
         .submit-btn { transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s; }
-        .back-btn:hover { color: #1BAEE8 !important; }
+        .back-btn:hover { color: var(--accent) !important; }
         .back-btn { transition: color 0.15s; }
 
         /* ── Layout ── */
         .login-root {
+          position: relative;
           min-height: 100vh;
           display: flex;
-          background: linear-gradient(160deg, #e6f6fd 0%, #edfaf6 60%, #f0fafa 100%);
+          background: var(--bg);
         }
 
         /* Left decorative panel */
@@ -113,6 +121,14 @@ export default function LoginPage() {
           overflow: hidden;
           display: flex;
         }
+        html[data-theme="dark"] .login-panel {
+          background: linear-gradient(145deg, #0d4a63 0%, #115a4c 100%);
+        }
+        html[data-theme="dark"] .login-panel .blob-1,
+        html[data-theme="dark"] .login-panel .blob-2,
+        html[data-theme="dark"] .login-panel .blob-3 {
+          background: rgba(62, 207, 178, 0.08) !important;
+        }
 
         /* Right form panel */
         .login-form-wrap {
@@ -122,7 +138,7 @@ export default function LoginPage() {
           align-items: center;
           justify-content: center;
           padding: 40px 32px;
-          background: white;
+          background: var(--surface);
           box-shadow: -8px 0 40px rgba(27,174,232,0.06);
         }
 
@@ -130,7 +146,7 @@ export default function LoginPage() {
         @media (max-width: 767px) {
           .login-root {
             flex-direction: column;
-            background: white;
+            background: var(--surface);
           }
 
           /* Compact top banner replaces the full left panel */
@@ -177,6 +193,9 @@ export default function LoginPage() {
       `}</style>
 
       <main className="login-root">
+        <div style={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}>
+          <ThemeToggle />
+        </div>
 
         {/* ── Left decorative panel ── */}
         <div className="login-panel">
@@ -241,13 +260,13 @@ export default function LoginPage() {
               <h1 style={{
                 fontSize: 24,
                 fontWeight: 700,
-                color: "#0d2d35",
+                color: "var(--text)",
                 letterSpacing: "-0.02em",
                 marginBottom: 6,
               }}>
                 {step === "phone" ? "Sign in" : "Check your phone"}
               </h1>
-              <p style={{ color: "#7aabb5", fontSize: 14, lineHeight: 1.5 }}>
+              <p style={{ color: "var(--text-3)", fontSize: 14, lineHeight: 1.5 }}>
                 {step === "phone"
                   ? "Enter your registered mobile number to continue."
                   : `We sent a 6-digit code to ${phone}`}
@@ -261,7 +280,7 @@ export default function LoginPage() {
                   <span style={{
                     position: "absolute", left: 14, top: "50%",
                     transform: "translateY(-50%)",
-                    color: "#9acdd8",
+                    color: "var(--text-4)",
                     fontSize: 13,
                     fontFamily: "JetBrains Mono, monospace",
                     userSelect: "none",
@@ -280,7 +299,7 @@ export default function LoginPage() {
                     style={{ ...inputStyle, paddingLeft: 52 }}
                   />
                 </div>
-                <p style={{ color: "#b8d8e0", fontSize: 12 }}>
+                <p style={{ color: "var(--text-4)", fontSize: 12 }}>
                   Registered personnel only. You'll receive a 6-digit SMS code.
                 </p>
 
@@ -292,8 +311,8 @@ export default function LoginPage() {
                 <div style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "12px 16px",
-                  background: "#edfaf6",
-                  border: "1.5px solid #b0ead8",
+                  background: "var(--badge-teal-bg)",
+                  border: "1.5px solid var(--badge-teal-bd)",
                   borderRadius: 12,
                   marginBottom: 24,
                 }}>
@@ -308,8 +327,8 @@ export default function LoginPage() {
                     </svg>
                   </div>
                   <div>
-                    <p style={{ color: "#2a8a74", fontSize: 12, fontWeight: 600 }}>Code sent to</p>
-                    <p style={{ color: "#0d2d35", fontSize: 13, fontFamily: "JetBrains Mono, monospace" }}>{phone}</p>
+                    <p style={{ color: "var(--badge-teal-fg)", fontSize: 12, fontWeight: 600 }}>Code sent to</p>
+                    <p style={{ color: "var(--text)", fontSize: 13, fontFamily: "JetBrains Mono, monospace" }}>{phone}</p>
                   </div>
                 </div>
 
@@ -345,7 +364,7 @@ export default function LoginPage() {
                   style={{
                     display: "block", width: "100%", marginTop: 10,
                     background: "none", border: "none",
-                    color: "#b8d8e0", fontSize: 13, cursor: "pointer",
+                    color: "var(--text-4)", fontSize: 13, cursor: "pointer",
                     padding: "10px 0", fontFamily: "Plus Jakarta Sans, sans-serif",
                   }}
                 >
@@ -354,7 +373,7 @@ export default function LoginPage() {
               </form>
             )}
 
-            <p style={{ textAlign: "center", color: "#d0e8ee", fontSize: 12, marginTop: 36 }}>
+            <p style={{ textAlign: "center", color: "var(--text-5)", fontSize: 12, marginTop: 36 }}>
               LifeTap Admin Portal · Batangas, Philippines
             </p>
           </div>
@@ -369,10 +388,7 @@ export default function LoginPage() {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "13px 16px",
-  background: "#f7fcfe",
-  border: "1.5px solid #d4eef5",
   borderRadius: 12,
-  color: "#0d2d35",
   fontSize: 15,
   fontFamily: "Plus Jakarta Sans, sans-serif",
   transition: "border-color 0.15s, box-shadow 0.15s",
@@ -382,7 +398,7 @@ function Label({ children }: { children: React.ReactNode }) {
   return (
     <label style={{
       display: "block",
-      color: "#4a8a97",
+      color: "var(--text-3)",
       fontSize: 11,
       fontWeight: 700,
       textTransform: "uppercase",
@@ -397,8 +413,9 @@ function ErrorBox({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       marginTop: 12, padding: "12px 14px",
-      background: "#fff5f5", border: "1.5px solid #fcc",
-      borderRadius: 10, color: "#c0392b", fontSize: 13,
+      background: "var(--badge-red-bg)",
+      border: "1.5px solid var(--badge-red-bd)",
+      borderRadius: 10, color: "var(--badge-red-fg)", fontSize: 13,
     }}>
       {children}
     </div>

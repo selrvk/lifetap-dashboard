@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
-import { User } from "@/lib/types";
-import UsersTable from "./usersTable";
+import { Personnel } from "@/lib/types";
+import PersonnelTable from "./personnelTable";
 
-export default async function UsersPage() {
+export default async function PersonnelPage() {
   const supabase = await createClient();
 
   const {
@@ -22,19 +22,19 @@ export default async function UsersPage() {
     .single();
 
   const adminClient = createAdminClient();
-  const { data: users, error } = await adminClient
-    .from("users")
+  const { data: personnel, error } = await adminClient
+    .from("personnel")
     .select("*")
-    .order("n", { ascending: true });
+    .order("full_name", { ascending: true });
 
   if (error) {
-    console.error("Failed to fetch users:", error.message);
+    console.error("Failed to fetch personnel:", error.message);
   }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <UsersTable
-        users={(users as User[]) ?? []}
+      <PersonnelTable
+        personnel={(personnel as Personnel[]) ?? []}
         personnelName={me?.full_name ?? "Administrator"}
         personnelRole={me?.role ?? "admin"}
       />

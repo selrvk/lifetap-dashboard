@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTransition, useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,79 @@ export default function NavBar({ name, role, onLogout }: NavBarProps) {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        .nav-header {
+          background: var(--surface);
+          border-bottom: 1px solid var(--border);
+          height: 60px;
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 0 20px;
+          position: sticky; top: 0; z-index: 30;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .nav-divider { width: 1px; height: 20px; background: var(--border); }
+
+        .nav-link {
+          display: flex; align-items: center; gap: 6px;
+          padding: 6px 12px; border-radius: 8px;
+          text-decoration: none; font-size: 13px; font-weight: 600;
+          color: var(--text-4);
+          transition: all 0.15s;
+        }
+        .nav-link:hover { background: var(--surface-hover); color: var(--accent); }
+        .nav-link.active { background: var(--accent-soft); color: var(--accent); }
+
+        .user-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.2; }
+        .user-role { font-size: 11px; color: var(--text-5); }
+
+        .avatar {
+          width: 34px; height: 34px; border-radius: 50%;
+          background: var(--accent-gradient);
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+        .avatar.sm { width: 32px; height: 32px; }
+        .avatar.md { width: 36px; height: 36px; }
+
+        .signout-btn {
+          display: flex; align-items: center; gap: 6px;
+          padding: 7px 13px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          font-size: 13px; font-weight: 600;
+          color: var(--danger);
+          cursor: pointer;
+          transition: all 0.15s;
+          font-family: inherit;
+        }
+        .signout-btn:hover:not(:disabled) {
+          background: var(--danger-bg);
+          border-color: var(--danger-border);
+        }
+        .signout-btn:disabled {
+          background: var(--surface-3);
+          color: var(--text-6);
+          cursor: not-allowed;
+        }
+
+        .hamburger-btn {
+          display: flex; flex-direction: column; justify-content: center; align-items: center;
+          gap: 5px; width: 36px; height: 36px;
+          background: transparent;
+          border: 1px solid var(--border);
+          border-radius: 8px; cursor: pointer; padding: 0;
+          transition: background 0.15s;
+        }
+        .hamburger-btn.open { background: var(--accent-soft); }
+        .hamburger-line {
+          width: 16px; height: 2px;
+          background: var(--text-4);
+          border-radius: 2px;
+          transition: all 0.2s;
+        }
+        .hamburger-btn.open .hamburger-line { background: var(--accent); }
+
         .navbar-desktop-nav { display: flex; gap: 4px; }
         .navbar-desktop-right { display: flex; align-items: center; gap: 12px; }
         .navbar-hamburger { display: none; }
@@ -65,16 +139,15 @@ export default function NavBar({ name, role, onLogout }: NavBarProps) {
         @media (max-width: 767px) {
           .navbar-desktop-nav { display: none; }
           .navbar-desktop-right { display: none; }
-          .navbar-hamburger { display: flex; }
+          .navbar-hamburger { display: flex; align-items: center; gap: 10px; }
           .navbar-mobile-menu {
             display: flex;
             flex-direction: column;
             position: fixed;
-            top: 60px;
-            left: 0; right: 0;
-            background: white;
-            border-bottom: 1.5px solid #d4eef5;
-            box-shadow: 0 8px 24px rgba(27,174,232,0.08);
+            top: 60px; left: 0; right: 0;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
             z-index: 29;
             padding: 12px 16px 16px;
             gap: 4px;
@@ -88,53 +161,30 @@ export default function NavBar({ name, role, onLogout }: NavBarProps) {
         }
 
         .nav-link-mobile {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 11px 14px;
-          border-radius: 10px;
-          text-decoration: none;
-          font-size: 14px;
-          font-weight: 600;
-          color: #7aabb5;
+          display: flex; align-items: center; gap: 10px;
+          padding: 11px 14px; border-radius: 10px;
+          text-decoration: none; font-size: 14px; font-weight: 600;
+          color: var(--text-4);
           transition: all 0.15s;
         }
-        .nav-link-mobile:hover { background: #f0f8fb; color: #1BAEE8; }
-        .nav-link-mobile.active { background: #e8f6fd; color: #1BAEE8; }
+        .nav-link-mobile:hover { background: var(--surface-hover); color: var(--accent); }
+        .nav-link-mobile.active { background: var(--accent-soft); color: var(--accent); }
       `}</style>
 
-      <header style={{
-        background: "white",
-        borderBottom: "1px solid #d4eef5",
-        height: 60,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 20px",
-        position: "sticky", top: 0, zIndex: 30,
-        boxShadow: "0 1px 8px rgba(27,174,232,0.06)",
-      }}>
+      <header className="nav-header">
 
         {/* ── Left: logo + desktop nav ── */}
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
             <Image src="/lifetap-logo.png" alt="LifeTap" width={30} height={30} style={{ borderRadius: 8 }} />
           </Link>
-          <div style={{ width: 1, height: 20, background: "#d4eef5" }} />
+          <div className="nav-divider" />
 
-          {/* Desktop nav links */}
           <nav className="navbar-desktop-nav">
             {NAV_LINKS.map((l) => {
               const active = path === l.href;
               return (
-                <Link key={l.href} href={l.href} style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "6px 12px", borderRadius: 8,
-                  textDecoration: "none", fontSize: 13, fontWeight: 600,
-                  color: active ? "#1BAEE8" : "#7aabb5",
-                  background: active ? "#e8f6fd" : "transparent",
-                  transition: "all 0.15s",
-                }}>
+                <Link key={l.href} href={l.href} className={`nav-link${active ? " active" : ""}`}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d={l.icon} strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -145,19 +195,18 @@ export default function NavBar({ name, role, onLogout }: NavBarProps) {
           </nav>
         </div>
 
-        {/* ── Desktop right: user + logout ── */}
+        {/* ── Desktop right: theme + user + logout ── */}
         <div className="navbar-desktop-right">
+          <ThemeToggle />
+
+          <div className="nav-divider" />
+
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ textAlign: "right" }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: "#0d2d35", lineHeight: 1.2 }}>{name}</p>
-              <p style={{ fontSize: 11, color: "#9acdd8" }}>{ROLE_LABELS[role] ?? role}</p>
+              <p className="user-name">{name}</p>
+              <p className="user-role">{ROLE_LABELS[role] ?? role}</p>
             </div>
-            <div style={{
-              width: 34, height: 34, borderRadius: "50%",
-              background: "linear-gradient(135deg, #1BAEE8, #3ECFB2)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0,
-            }}>
+            <div className="avatar">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" strokeLinecap="round" />
                 <circle cx="12" cy="7" r="4" />
@@ -165,34 +214,9 @@ export default function NavBar({ name, role, onLogout }: NavBarProps) {
             </div>
           </div>
 
-          <div style={{ width: 1, height: 20, background: "#d4eef5" }} />
+          <div className="nav-divider" />
 
-          <button
-            onClick={handleLogout}
-            disabled={isPending}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "7px 13px",
-              background: isPending ? "#f7fcfe" : "white",
-              border: "1.5px solid #d4eef5",
-              borderRadius: 8,
-              fontSize: 13, fontWeight: 600,
-              color: isPending ? "#b8d8e0" : "#e05c5c",
-              cursor: isPending ? "not-allowed" : "pointer",
-              transition: "all 0.15s",
-              fontFamily: "Plus Jakarta Sans, sans-serif",
-            }}
-            onMouseEnter={(e) => {
-              if (!isPending) {
-                (e.currentTarget as HTMLElement).style.background = "#fff5f5";
-                (e.currentTarget as HTMLElement).style.borderColor = "#f5a0a0";
-              }
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = isPending ? "#f7fcfe" : "white";
-              (e.currentTarget as HTMLElement).style.borderColor = "#d4eef5";
-            }}
-          >
+          <button onClick={handleLogout} disabled={isPending} className="signout-btn">
             {isPending ? (
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
                 style={{ animation: "spin 0.7s linear infinite" }}>
@@ -209,65 +233,46 @@ export default function NavBar({ name, role, onLogout }: NavBarProps) {
           </button>
         </div>
 
-        {/* ── Mobile right: avatar + hamburger ── */}
-        <div className="navbar-hamburger" style={{ alignItems: "center", gap: 10 }}>
-          {/* Mini avatar */}
-          <div style={{
-            width: 32, height: 32, borderRadius: "50%",
-            background: "linear-gradient(135deg, #1BAEE8, #3ECFB2)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
+        {/* ── Mobile right: theme + avatar + hamburger ── */}
+        <div className="navbar-hamburger">
+          <ThemeToggle />
+          <div className="avatar sm">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" strokeLinecap="round" />
               <circle cx="12" cy="7" r="4" />
             </svg>
           </div>
-
-          {/* Hamburger button */}
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            style={{
-              display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
-              gap: 5, width: 36, height: 36,
-              background: menuOpen ? "#e8f6fd" : "transparent",
-              border: "1.5px solid #d4eef5",
-              borderRadius: 8, cursor: "pointer", padding: 0,
-              transition: "background 0.15s",
-            }}
+            className={`hamburger-btn${menuOpen ? " open" : ""}`}
           >
-            <span style={{ width: 16, height: 2, background: menuOpen ? "#1BAEE8" : "#7aabb5", borderRadius: 2, transition: "all 0.2s", transform: menuOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
-            <span style={{ width: 16, height: 2, background: menuOpen ? "#1BAEE8" : "#7aabb5", borderRadius: 2, transition: "all 0.2s", opacity: menuOpen ? 0 : 1 }} />
-            <span style={{ width: 16, height: 2, background: menuOpen ? "#1BAEE8" : "#7aabb5", borderRadius: 2, transition: "all 0.2s", transform: menuOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
+            <span className="hamburger-line" style={{ transform: menuOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
+            <span className="hamburger-line" style={{ opacity: menuOpen ? 0 : 1 }} />
+            <span className="hamburger-line" style={{ transform: menuOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
           </button>
         </div>
       </header>
 
       {/* ── Mobile dropdown menu ── */}
       <div className={`navbar-mobile-menu${menuOpen ? "" : " navbar-mobile-menu-hidden"}`}>
-        {/* User info row */}
         <div style={{
           display: "flex", alignItems: "center", gap: 10,
           padding: "10px 14px 14px",
-          borderBottom: "1px solid #edf5f8",
+          borderBottom: "1px solid var(--border)",
           marginBottom: 8,
         }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-            background: "linear-gradient(135deg, #1BAEE8, #3ECFB2)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
+          <div className="avatar md">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" strokeLinecap="round" />
               <circle cx="12" cy="7" r="4" />
             </svg>
           </div>
           <div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: "#0d2d35" }}>{name}</p>
-            <p style={{ fontSize: 12, color: "#9acdd8" }}>{ROLE_LABELS[role] ?? role}</p>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{name}</p>
+            <p style={{ fontSize: 12, color: "var(--text-5)" }}>{ROLE_LABELS[role] ?? role}</p>
           </div>
         </div>
 
-        {/* Nav links */}
         {NAV_LINKS.map((l) => {
           const active = path === l.href;
           return (
@@ -285,7 +290,6 @@ export default function NavBar({ name, role, onLogout }: NavBarProps) {
           );
         })}
 
-        {/* Logout */}
         <button
           onClick={() => { setMenuOpen(false); handleLogout(); }}
           disabled={isPending}
@@ -293,14 +297,14 @@ export default function NavBar({ name, role, onLogout }: NavBarProps) {
             display: "flex", alignItems: "center", gap: 10,
             padding: "11px 14px",
             marginTop: 4,
-            borderTop: "1px solid #edf5f8",
+            borderTop: "1px solid var(--border)",
             background: "none", border: "none",
             width: "100%", textAlign: "left",
             fontSize: 14, fontWeight: 600,
-            color: isPending ? "#b8d8e0" : "#e05c5c",
+            color: isPending ? "var(--text-6)" : "var(--danger)",
             cursor: isPending ? "not-allowed" : "pointer",
             borderRadius: 10,
-            fontFamily: "Plus Jakarta Sans, sans-serif",
+            fontFamily: "inherit",
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

@@ -1,26 +1,87 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ─── LifeTap theme tokens ─────────────────────────────────────────────── */
+
+:root,
+html[data-theme="light"] {
+  --bg:            #f6fbfd;
+  --surface:       #ffffff;
+  --surface-2:     #eaf4f8;
+  --surface-3:     #f0f8fb;
+  --surface-hover: #f0f8fb;
+  --border:        #dbedf2;
+  --border-strong: #b8dff0;
+  --text:          #0d2d35;
+  --text-2:        #2d5a68;
+  --text-3:        #5c8896;
+  --text-4:        #7aabb5;
+  --text-5:        #9acdd8;
+  --text-6:        #b8d8e0;
+  --accent:        #1BAEE8;
+  --accent-2:      #3ECFB2;
+  --accent-soft:   rgba(27, 174, 232, 0.10);
+  --accent-gradient: linear-gradient(135deg, #1BAEE8 0%, #3ECFB2 100%);
+  --danger:        #e05c5c;
+  --danger-bg:     #fff5f5;
+  --danger-border: #f5a0a0;
+
+  --shadow-sm: 0 1px 2px rgba(13, 45, 53, 0.03), 0 1px 3px rgba(27, 174, 232, 0.04);
+  --shadow-md: 0 6px 24px rgba(13, 45, 53, 0.06);
+  --ring: rgba(27, 174, 232, 0.18);
+
+  /* Semantic badge palette */
+  --badge-blue-bg:   #e8f6fd;   --badge-blue-fg:   #1a7da8;   --badge-blue-bd:   #b8dff0;
+  --badge-teal-bg:   #edfaf6;   --badge-teal-fg:   #1e8a6e;   --badge-teal-bd:   #b0ead8;
+  --badge-red-bg:    #fff0f0;   --badge-red-fg:    #c0392b;   --badge-red-bd:    #f5c0bc;
+  --badge-amber-bg:  #fff8e8;   --badge-amber-fg:  #9a6800;   --badge-amber-bd:  #f0d898;
+  --badge-gray-bg:   #f2f6f8;   --badge-gray-fg:   #5a8090;   --badge-gray-bd:   #d8e8ee;
+  --badge-purple-bg: #f3eeff;   --badge-purple-fg: #6b3fa0;   --badge-purple-bd: #d4b8f5;
+}
+
+html[data-theme="dark"] {
+  --bg:            #0a1419;
+  --surface:       #0f1f26;
+  --surface-2:     #1a3039;
+  --surface-3:     #14262e;
+  --surface-hover: #18303a;
+  --border:        #1d3540;
+  --border-strong: #2d5060;
+  --text:          #eaf6fa;
+  --text-2:        #c8dde4;
+  --text-3:        #9acdd8;
+  --text-4:        #7aa5b0;
+  --text-5:        #5c828d;
+  --text-6:        #41606b;
+  --accent:        #3ECFB2;
+  --accent-2:      #1BAEE8;
+  --accent-soft:   rgba(62, 207, 178, 0.12);
+  --accent-gradient: linear-gradient(135deg, #3ECFB2 0%, #1BAEE8 100%);
+  --danger:        #ff7b7b;
+  --danger-bg:     rgba(224, 92, 92, 0.12);
+  --danger-border: rgba(255, 123, 123, 0.4);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --ring: rgba(62, 207, 178, 0.25);
+
+  --badge-blue-bg:   rgba(27, 174, 232, 0.15);  --badge-blue-fg:   #6fcef0;  --badge-blue-bd:   rgba(27, 174, 232, 0.35);
+  --badge-teal-bg:   rgba(62, 207, 178, 0.15);  --badge-teal-fg:   #6fe2c5;  --badge-teal-bd:   rgba(62, 207, 178, 0.35);
+  --badge-red-bg:    rgba(224, 92, 92, 0.15);   --badge-red-fg:    #ff9a9a;  --badge-red-bd:    rgba(224, 92, 92, 0.35);
+  --badge-amber-bg:  rgba(234, 179, 8, 0.15);   --badge-amber-fg:  #f5c95a;  --badge-amber-bd:  rgba(234, 179, 8, 0.35);
+  --badge-gray-bg:   rgba(154, 205, 216, 0.08); --badge-gray-fg:   #9acdd8;  --badge-gray-bd:   rgba(154, 205, 216, 0.2);
+  --badge-purple-bg: rgba(147, 98, 208, 0.18);  --badge-purple-fg: #c3a3f0;  --badge-purple-bd: rgba(147, 98, 208, 0.4);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', Arial, Helvetica, sans-serif;
+  transition: background 0.2s ease, color 0.2s ease;
 }
