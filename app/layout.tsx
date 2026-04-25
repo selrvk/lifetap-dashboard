@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LifeTap — LGU Emergency Health Dashboard",
+  title: "LifeTap — Dashboard",
   description:
-    "Secure dashboard for Local Government Unit personnel to manage civilian medical profiles and coordinate emergency response.",
+    "Secure dashboard for personnel to manage civilian medical profiles and coordinate emergency response.",
 };
 
 const themeInitScript = `
