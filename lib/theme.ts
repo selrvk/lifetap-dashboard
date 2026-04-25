@@ -5,16 +5,12 @@ import { useEffect, useRef, useState } from "react";
 export type Theme = "light" | "dark";
 
 export function useTheme(): [Theme, (t: Theme) => void] {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof document !== "undefined") {
-      const attr = document.documentElement.getAttribute("data-theme");
-      if (attr === "dark" || attr === "light") return attr;
-    }
-    return "light";
-  });
+  const [theme, setTheme] = useState<Theme>("light");
   const hydrated = useRef(false);
 
   useEffect(() => {
+    const attr = document.documentElement.getAttribute("data-theme");
+    if (attr === "dark" || attr === "light") setTheme(attr);
     hydrated.current = true;
   }, []);
 

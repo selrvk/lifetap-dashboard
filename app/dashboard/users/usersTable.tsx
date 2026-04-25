@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import NavBar from "@/components/NavBar";
-import { User } from "@/lib/types";
+import Pagination from "@/components/Pagination";
+import ExportButton from "@/components/ExportButton";
+import { User, UserRow } from "@/lib/types";
 import { logout } from "@/app/actions/auth";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -50,7 +53,46 @@ function Badge({ children, variant = "gray" }: { children: React.ReactNode; vari
 
 // ─── Drawer ──────────────────────────────────────────────────────────────────
 
-function UserDrawer({ user, onClose }: { user: User; onClose: () => void }) {
+function UserDrawer({
+  user,
+  isAdmin,
+  onClose,
+  onToggleActive,
+}: {
+  user: User;
+  isAdmin: boolean;
+  onClose: () => void;
+  onToggleActive: (newValue: boolean) => void;
+}) {
+  const [toggling, setToggling] = useState(false);
+  const [toggleError, setToggleError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+
+  async function handleToggle() {
+    setToggling(true);
+    setToggleError(null);
+    const next = !user.is_active;
+    try {
+      const res = await fetch(`/api/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: next }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setToggleError((j as { error?: string }).error ?? "Request failed.");
+        setConfirming(false);
+      } else {
+        onToggleActive(next);
+      }
+    } catch {
+      setToggleError("Network error.");
+      setConfirming(false);
+    } finally {
+      setToggling(false);
+    }
+  }
+
   return (
     <>
       <div
@@ -89,6 +131,7 @@ function UserDrawer({ user, onClose }: { user: User; onClose: () => void }) {
             </div>
             <button
               onClick={onClose}
+              aria-label="Close"
               style={{
                 background: "rgba(255,255,255,0.2)",
                 border: "none", borderRadius: 8,
@@ -182,6 +225,125 @@ function UserDrawer({ user, onClose }: { user: User; onClose: () => void }) {
             </Section>
           )}
 
+          <Section label="Consent">
+            <Grid2>
+              <Field label="Consent given">
+                {user.consent_given_at
+                  ? <Badge variant="teal">{formatDate(user.consent_given_at)}</Badge>
+                  : <Badge variant="gray">Not recorded</Badge>}
+              </Field>
+              <Field label="Notice version" value={user.consent_version ?? "—"} />
+              {user.consent_withdrawn_at && (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <Field label="Consent withdrawn">
+                    <Badge variant="red">{formatDate(user.consent_withdrawn_at)}</Badge>
+                  </Field>
+                </div>
+              )}
+            </Grid2>
+          </Section>
+
+          {/* Admin-only: deactivate / reactivate */}
+          {isAdmin && (
+            <section style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+              <p style={{ color: "var(--text-5)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10, fontFamily: "'JetBrains Mono', monospace" }}>
+                Admin Actions
+              </p>
+
+              {toggleError && (
+                <p style={{ fontSize: 12, color: "var(--badge-red-fg)", marginBottom: 8, background: "var(--badge-red-bg)", padding: "6px 10px", borderRadius: 8, border: "1px solid var(--badge-red-bd)" }}>
+                  {toggleError}
+                </p>
+              )}
+
+              {/* Deactivate — needs confirmation */}
+              {user.is_active && !confirming && (
+                <>
+                  <button
+                    onClick={() => setConfirming(true)}
+                    style={{
+                      width: "100%", padding: "10px 16px", borderRadius: 10,
+                      border: "1px solid var(--badge-red-bd)",
+                      background: "var(--badge-red-bg)", color: "var(--badge-red-fg)",
+                      fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    }}
+                  >
+                    Deactivate Profile
+                  </button>
+                  <p style={{ fontSize: 11, color: "var(--text-6)", marginTop: 6, lineHeight: 1.5 }}>
+                    Hides this profile from all dashboard lists. The record is preserved and reversible.
+                  </p>
+                </>
+              )}
+
+              {/* Confirmation step */}
+              {user.is_active && confirming && (
+                <div style={{ background: "var(--badge-red-bg)", border: "1px solid var(--badge-red-bd)", borderRadius: 10, padding: "14px" }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "var(--badge-red-fg)", marginBottom: 4 }}>
+                    Deactivate {user.n}?
+                  </p>
+                  <p style={{ fontSize: 12, color: "var(--text-4)", lineHeight: 1.5, marginBottom: 12 }}>
+                    This profile will be hidden from all lists immediately. You can reactivate it at any time.
+                  </p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => setConfirming(false)}
+                      disabled={toggling}
+                      style={{
+                        flex: 1, padding: "8px 12px", borderRadius: 8,
+                        border: "1px solid var(--border)", background: "var(--surface)",
+                        color: "var(--text-4)", fontSize: 13, fontWeight: 600,
+                        cursor: "pointer", fontFamily: "inherit",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleToggle}
+                      disabled={toggling}
+                      style={{
+                        flex: 1, padding: "8px 12px", borderRadius: 8,
+                        border: "none", background: "var(--badge-red-fg)", color: "white",
+                        fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                        cursor: toggling ? "not-allowed" : "pointer",
+                        opacity: toggling ? 0.6 : 1,
+                        transition: "opacity 0.15s",
+                      }}
+                    >
+                      {toggling ? "Deactivating…" : "Yes, Deactivate"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Reactivate — no confirmation needed, safe action */}
+              {!user.is_active && (
+                <>
+                  <button
+                    onClick={handleToggle}
+                    disabled={toggling}
+                    style={{
+                      width: "100%", padding: "10px 16px", borderRadius: 10,
+                      border: "1px solid var(--badge-teal-bd)",
+                      background: "var(--badge-teal-bg)", color: "var(--badge-teal-fg)",
+                      fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                      cursor: toggling ? "not-allowed" : "pointer",
+                      opacity: toggling ? 0.6 : 1,
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      transition: "opacity 0.15s",
+                    }}
+                  >
+                    {toggling ? "Reactivating…" : "Reactivate Profile"}
+                  </button>
+                  <p style={{ fontSize: 11, color: "var(--text-6)", marginTop: 6, lineHeight: 1.5 }}>
+                    Makes this profile visible again in all dashboard lists.
+                  </p>
+                </>
+              )}
+            </section>
+          )}
+
           <p style={{ color: "var(--text-6)", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", paddingTop: 8, borderTop: "1px solid var(--border)" }}>
             Last updated {formatDate(user.updated_at)}
           </p>
@@ -235,32 +397,97 @@ function Field({ label, value, children }: { label: string; value?: string; chil
   );
 }
 
+// ─── Drawer skeleton ────────────────────────────────────────────────────────
+
+function DrawerSkeleton({ onClose, loading }: { onClose: () => void; loading: boolean }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(13,45,53,0.4)", backdropFilter: "blur(4px)", zIndex: 40 }} />
+      <aside style={{
+        position: "fixed", right: 0, top: 0,
+        height: "100%", width: "100%", maxWidth: 440,
+        background: "var(--surface)", borderLeft: "1px solid var(--border)",
+        zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: "-8px 0 48px rgba(13,45,53,0.2)",
+      }}>
+        {loading && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, color: "var(--text-5)" }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 1s linear infinite" }}>
+              <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.25" />
+              <path d="M21 12a9 9 0 00-9-9" strokeLinecap="round" />
+            </svg>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <span style={{ fontSize: 13 }}>Loading profile…</span>
+          </div>
+        )}
+      </aside>
+    </>
+  );
+}
+
 // ─── Main Table ──────────────────────────────────────────────────────────────
 
 type Props = {
-  users: User[];
+  users: UserRow[];
+  total: number;
+  page: number;
+  pageSize: number;
   personnelName: string;
   personnelRole: string;
 };
 
-export default function UsersTable({ users, personnelName, personnelRole }: Props) {
-  const [search, setSearch] = useState("");
-  const [bloodFilter, setBloodFilter] = useState("All");
-  const [organDonorOnly, setOrganDonorOnly] = useState(false);
-  const [selected, setSelected] = useState<User | null>(null);
+export default function UsersTable({ users, total, page, pageSize, personnelName, personnelRole }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  const filtered = useMemo(() => {
-    return users.filter((u) => {
-      const q = search.toLowerCase();
-      const matchSearch = !q ||
-        u.n.toLowerCase().includes(q) ||
-        u.cty.toLowerCase().includes(q) ||
-        u.brg.toLowerCase().includes(q) ||
-        u.c.some((c) => c.toLowerCase().includes(q)) ||
-        u.a.some((a) => a.toLowerCase().includes(q));
-      return matchSearch && (bloodFilter === "All" || u.bt === bloodFilter) && (!organDonorOnly || u.od);
-    });
-  }, [users, search, bloodFilter, organDonorOnly]);
+  // Drawer state
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [fullUser, setFullUser] = useState<User | null>(null);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+
+  // Debounced search input
+  const [draft, setDraft] = useState(searchParams.get("q") ?? "");
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const p = new URLSearchParams(searchParams.toString());
+      if (draft) p.set("q", draft); else p.delete("q");
+      p.delete("page");
+      startTransition(() => router.push(`${pathname}?${p.toString()}`));
+    }, 400);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft]);
+
+  // Sync draft when URL changes externally (e.g. back button)
+  useEffect(() => {
+    setDraft(searchParams.get("q") ?? "");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get("q")]);
+
+  function setParam(key: string, value: string | null) {
+    const p = new URLSearchParams(searchParams.toString());
+    if (value && value !== "All") p.set(key, value); else p.delete(key);
+    p.delete("page");
+    startTransition(() => router.push(`${pathname}?${p.toString()}`));
+  }
+
+  const bloodFilter = searchParams.get("bt") ?? "All";
+  const organDonorOnly = searchParams.get("od") === "1";
+
+  // Drawer fetch
+  useEffect(() => {
+    if (!selectedId) { setFullUser(null); return; }
+    let cancelled = false;
+    setDrawerLoading(true);
+    fetch(`/api/users/${selectedId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (!cancelled) { setFullUser(data); setDrawerLoading(false); } })
+      .catch(() => { if (!cancelled) setDrawerLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedId]);
 
   return (
     <>
@@ -333,20 +560,16 @@ export default function UsersTable({ users, personnelName, personnelRole }: Prop
 
       <NavBar name={personnelName} role={personnelRole} onLogout={logout} />
 
-      <div className="table-root">
+      <div className="table-root" style={{ opacity: isPending ? 0.7 : 1, transition: "opacity 0.2s" }}>
         <main className="table-main">
 
-          {/* Page title */}
           <div style={{ marginBottom: 24 }}>
             <p className="eyebrow">Directory</p>
-            <h1 style={{
-              fontSize: 24, fontWeight: 700, color: "var(--text)",
-              letterSpacing: "-0.02em", marginTop: 4,
-            }}>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.02em", marginTop: 4 }}>
               Registered Users
             </h1>
             <p style={{ color: "var(--text-4)", fontSize: 13, marginTop: 4 }}>
-              {users.length} total record{users.length !== 1 ? "s" : ""} · Click a row to view the full profile
+              {total.toLocaleString("en-US")} total record{total !== 1 ? "s" : ""} · Click a row to view the full profile
             </p>
           </div>
 
@@ -360,21 +583,17 @@ export default function UsersTable({ users, personnelName, personnelRole }: Prop
               <input
                 className="filter-input"
                 type="text"
-                placeholder="Search name, city, condition, allergy…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  width: "100%", paddingLeft: 38, paddingRight: 14,
-                  paddingTop: 10, paddingBottom: 10,
-                  fontSize: 13,
-                }}
+                placeholder="Search name or city…"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                style={{ width: "100%", paddingLeft: 38, paddingRight: 14, paddingTop: 10, paddingBottom: 10, fontSize: 13 }}
               />
             </div>
 
             <select
               className="filter-select"
               value={bloodFilter}
-              onChange={(e) => setBloodFilter(e.target.value)}
+              onChange={(e) => setParam("bt", e.target.value)}
               style={{ padding: "10px 14px", fontSize: 13, cursor: "pointer" }}
             >
               {BLOOD_TYPES.map((bt) => (
@@ -383,26 +602,20 @@ export default function UsersTable({ users, personnelName, personnelRole }: Prop
             </select>
 
             <button
-              onClick={() => setOrganDonorOnly((v) => !v)}
+              onClick={() => setParam("od", organDonorOnly ? null : "1")}
               className={`filter-btn${organDonorOnly ? " active" : ""}`}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "10px 16px",
-                fontSize: 13, fontWeight: 600,
-                color: "var(--text-4)",
-              }}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-4)" }}
             >
               Organ Donors Only
             </button>
 
-            <div className="count-chip" style={{
-              display: "flex", alignItems: "center",
-              padding: "10px 14px",
-            }}>
+            <div className="count-chip" style={{ display: "flex", alignItems: "center", padding: "10px 14px" }}>
               <span className="mono" style={{ fontSize: 13, color: "var(--text-4)" }}>
-                {filtered.length}<span style={{ margin: "0 4px", color: "var(--text-6)" }}>/</span>{users.length}
+                {users.length}<span style={{ margin: "0 4px", color: "var(--text-6)" }}>/</span>{total.toLocaleString("en-US")}
               </span>
             </div>
+
+            <ExportButton href={`/api/export/users?${searchParams.toString()}`} />
           </div>
 
           {/* Table */}
@@ -417,24 +630,22 @@ export default function UsersTable({ users, personnelName, personnelRole }: Prop
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.length === 0 ? (
+                  {users.length === 0 ? (
                     <tr>
                       <td colSpan={8} style={{ padding: "64px 0", textAlign: "center", color: "var(--text-5)", fontSize: 14 }}>
                         No records match your filters.
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((user, i) => (
+                    users.map((user, i) => (
                       <tr
                         key={user.id}
                         className="user-row"
-                        onClick={() => setSelected(user)}
-                        style={{ borderBottom: i < filtered.length - 1 ? "1px solid var(--border)" : "none" }}
+                        onClick={() => setSelectedId(user.id)}
+                        style={{ borderBottom: i < users.length - 1 ? "1px solid var(--border)" : "none" }}
                       >
                         <td style={{ padding: "14px 16px" }}>
-                          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" }}>
-                            {user.n}
-                          </p>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" }}>{user.n}</p>
                           <p className="mono" style={{ fontSize: 11, color: "var(--text-6)", marginTop: 2 }}>{user.id}</p>
                         </td>
 
@@ -444,32 +655,22 @@ export default function UsersTable({ users, personnelName, personnelRole }: Prop
                         </td>
 
                         <td style={{ padding: "14px 16px" }}>
-                          <span className="mono" style={{
-                            fontWeight: 700, fontSize: 15,
-                            background: "var(--accent-gradient)",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
-                          }}>
+                          <span className="mono" style={{ fontWeight: 700, fontSize: 15, background: "var(--accent-gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                             {user.bt}
                           </span>
                         </td>
 
                         <td style={{ padding: "14px 16px" }}>
                           <p style={{ fontSize: 13, color: "var(--text-2)", whiteSpace: "nowrap" }}>{user.cty}</p>
-                          <p style={{ fontSize: 11, color: "var(--text-5)", marginTop: 2, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {user.brg}
-                          </p>
+                          <p style={{ fontSize: 11, color: "var(--text-5)", marginTop: 2, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.brg}</p>
                         </td>
 
                         <td style={{ padding: "14px 16px" }}>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                             {user.c.length === 0
                               ? <span style={{ color: "var(--text-6)", fontSize: 12 }}>None</span>
-                              : <>
-                                  <Badge variant="amber">{user.c[0].length > 22 ? user.c[0].slice(0, 22) + "…" : user.c[0]}</Badge>
-                                  {user.c.length > 1 && <Badge variant="gray">+{user.c.length - 1}</Badge>}
-                                </>
-                            }
+                              : <><Badge variant="amber">{user.c[0].length > 22 ? user.c[0].slice(0, 22) + "…" : user.c[0]}</Badge>
+                                {user.c.length > 1 && <Badge variant="gray">+{user.c.length - 1}</Badge>}</>}
                           </div>
                         </td>
 
@@ -477,11 +678,8 @@ export default function UsersTable({ users, personnelName, personnelRole }: Prop
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                             {user.a.length === 0
                               ? <span style={{ color: "var(--text-6)", fontSize: 12 }}>None</span>
-                              : <>
-                                  <Badge variant="red">{user.a[0]}</Badge>
-                                  {user.a.length > 1 && <Badge variant="gray">+{user.a.length - 1}</Badge>}
-                                </>
-                            }
+                              : <><Badge variant="red">{user.a[0]}</Badge>
+                                {user.a.length > 1 && <Badge variant="gray">+{user.a.length - 1}</Badge>}</>}
                           </div>
                         </td>
 
@@ -506,10 +704,31 @@ export default function UsersTable({ users, personnelName, personnelRole }: Prop
               </table>
             </div>
           </div>
+
+          <Pagination page={page} pageSize={pageSize} total={total} />
         </main>
       </div>
 
-      {selected && <UserDrawer user={selected} onClose={() => setSelected(null)} />}
+      {selectedId && (
+        fullUser
+          ? <UserDrawer
+              user={fullUser}
+              isAdmin={personnelRole === "admin"}
+              onClose={() => { setSelectedId(null); setFullUser(null); }}
+              onToggleActive={(newValue) => {
+                // Optimistically update the local full-user state, then refresh
+                // the server list so the deactivated row disappears.
+                setFullUser((u) => u ? { ...u, is_active: newValue } : u);
+                if (!newValue) {
+                  // Profile was deactivated — close drawer and reload list
+                  setSelectedId(null);
+                  setFullUser(null);
+                  startTransition(() => router.refresh());
+                }
+              }}
+            />
+          : <DrawerSkeleton onClose={() => setSelectedId(null)} loading={drawerLoading} />
+      )}
     </>
   );
 }

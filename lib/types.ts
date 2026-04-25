@@ -19,9 +19,18 @@ export type User = {
   meds: string[];      // medications
   kin: NextOfKin[];    // next of kin
   is_public: boolean;
+  is_active: boolean;
   updated_at: string;
+  // Consent tracking (DPA compliance)
+  consent_given_at:     string | null;
+  consent_version:      string | null;
+  consent_withdrawn_at: string | null;
 };
  
+// Slim type for the users list — PII-heavy fields are excluded and only
+// fetched on demand when a drawer opens (via /api/users/[id]).
+export type UserRow = Omit<User, "phn" | "rel" | "kin" | "updated_at">;
+
 export type PersonnelRole = "medic" | "responder" | "admin";
  
 export type Personnel = {

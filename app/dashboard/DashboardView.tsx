@@ -377,7 +377,7 @@ export default function DashboardView({
         .dash-main   { padding: 32px 32px 48px; max-width: 1280px; margin: 0 auto; }
         .grid-stats  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
         .grid-charts { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
-        .grid-links  { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-links  { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 
         @media (max-width: 1024px) {
           .grid-charts { grid-template-columns: 1fr 1fr; }
@@ -551,6 +551,9 @@ export default function DashboardView({
             {[
               { href: "/dashboard/users", label: "Manage users", desc: "View, search, and inspect registered user profiles." },
               { href: "/dashboard/personnel", label: "Manage personnel", desc: "Medics, responders, and admin accounts." },
+              ...(personnelRole === "admin"
+                ? [{ href: "/dashboard/audit", label: "Audit log", desc: "Review all data access and activity events." }]
+                : []),
             ].map((link) => (
               <Link key={link.href} href={link.href} className="quick-link">
                 <div style={{
