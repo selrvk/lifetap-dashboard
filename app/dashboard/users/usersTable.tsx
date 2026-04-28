@@ -10,8 +10,10 @@ import { logout } from "@/app/actions/auth";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function calcAge(dob: string): number {
+function calcAge(dob: string): number | null {
+  if (!dob) return null;
   const birth = new Date(dob);
+  if (isNaN(birth.getTime())) return null;
   const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
@@ -20,7 +22,10 @@ function calcAge(dob: string): number {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-PH", {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-PH", {
     year: "numeric", month: "short", day: "numeric",
   });
 }
@@ -147,8 +152,8 @@ function UserDrawer({
           </div>
 
           <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-            <QuickStat label="Blood Type" value={user.bt} />
-            <QuickStat label="Age" value={`${calcAge(user.dob)} yrs`} />
+            <QuickStat label="Blood Type" value={user.bt || "—"} />
+            <QuickStat label="Age" value={user.dob ? `${calcAge(user.dob)} yrs` : "—"} />
             {user.od && <QuickStat label="Organ Donor" value="Yes" />}
           </div>
         </div>
@@ -399,7 +404,7 @@ function Field({ label, value, children }: { label: string; value?: string; chil
 
 // ─── Drawer skeleton ────────────────────────────────────────────────────────
 
-function DrawerSkeleton({ onClose, loading }: { onClose: () => void; loading: boolean }) {
+function DrawerSkeleton({ onClose, loading, notFound }: { onClose: () => void; loading: boolean; notFound?: boolean }) {
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(13,45,53,0.4)", backdropFilter: "blur(4px)", zIndex: 40 }} />
@@ -410,7 +415,16 @@ function DrawerSkeleton({ onClose, loading }: { onClose: () => void; loading: bo
         zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center",
         boxShadow: "-8px 0 48px rgba(13,45,53,0.2)",
       }}>
-        {loading && (
+        {notFound ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, color: "var(--text-5)", padding: "0 32px", textAlign: "center" }}>
+            <span style={{ fontSize: 32 }}>—</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-2)" }}>Account not found</span>
+            <span style={{ fontSize: 13 }}>This user may have deleted their account.</span>
+            <button onClick={onClose} style={{ marginTop: 8, padding: "8px 20px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text-2)", fontSize: 13, cursor: "pointer" }}>
+              Close
+            </button>
+          </div>
+        ) : loading ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, color: "var(--text-5)" }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 1s linear infinite" }}>
               <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.25" />
@@ -419,7 +433,7 @@ function DrawerSkeleton({ onClose, loading }: { onClose: () => void; loading: bo
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             <span style={{ fontSize: 13 }}>Loading profile…</span>
           </div>
-        )}
+        ) : null}
       </aside>
     </>
   );
@@ -446,6 +460,7 @@ export default function UsersTable({ users, total, page, pageSize, personnelName
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fullUser, setFullUser] = useState<User | null>(null);
   const [drawerLoading, setDrawerLoading] = useState(false);
+  const [drawerNotFound, setDrawerNotFound] = useState(false);
 
   // Debounced search input
   const [draft, setDraft] = useState(searchParams.get("q") ?? "");
@@ -479,13 +494,17 @@ export default function UsersTable({ users, total, page, pageSize, personnelName
 
   // Drawer fetch
   useEffect(() => {
-    if (!selectedId) { setFullUser(null); return; }
+    if (!selectedId) { setFullUser(null); setDrawerNotFound(false); return; }
     let cancelled = false;
     setDrawerLoading(true);
+    setDrawerNotFound(false);
     fetch(`/api/users/${selectedId}`)
-      .then((r) => r.ok ? r.json() : null)
+      .then((r) => {
+        if (!cancelled) setDrawerNotFound(!r.ok);
+        return r.ok ? r.json() : null;
+      })
       .then((data) => { if (!cancelled) { setFullUser(data); setDrawerLoading(false); } })
-      .catch(() => { if (!cancelled) setDrawerLoading(false); });
+      .catch(() => { if (!cancelled) { setDrawerLoading(false); } });
     return () => { cancelled = true; };
   }, [selectedId]);
 
@@ -650,19 +669,19 @@ export default function UsersTable({ users, total, page, pageSize, personnelName
                         </td>
 
                         <td style={{ padding: "14px 16px" }}>
-                          <p className="mono" style={{ fontSize: 14, color: "var(--text-2)", whiteSpace: "nowrap" }}>{calcAge(user.dob)} yrs</p>
+                          <p className="mono" style={{ fontSize: 14, color: "var(--text-2)", whiteSpace: "nowrap" }}>{user.dob ? `${calcAge(user.dob)} yrs` : "—"}</p>
                           <p style={{ fontSize: 11, color: "var(--text-5)", marginTop: 2 }}>{formatDate(user.dob)}</p>
                         </td>
 
                         <td style={{ padding: "14px 16px" }}>
                           <span className="mono" style={{ fontWeight: 700, fontSize: 15, background: "var(--accent-gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                            {user.bt}
+                            {user.bt || "—"}
                           </span>
                         </td>
 
                         <td style={{ padding: "14px 16px" }}>
-                          <p style={{ fontSize: 13, color: "var(--text-2)", whiteSpace: "nowrap" }}>{user.cty}</p>
-                          <p style={{ fontSize: 11, color: "var(--text-5)", marginTop: 2, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.brg}</p>
+                          <p style={{ fontSize: 13, color: "var(--text-2)", whiteSpace: "nowrap" }}>{user.cty || "—"}</p>
+                          <p style={{ fontSize: 11, color: "var(--text-5)", marginTop: 2, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.brg || "—"}</p>
                         </td>
 
                         <td style={{ padding: "14px 16px" }}>
@@ -727,7 +746,7 @@ export default function UsersTable({ users, total, page, pageSize, personnelName
                 }
               }}
             />
-          : <DrawerSkeleton onClose={() => setSelectedId(null)} loading={drawerLoading} />
+          : <DrawerSkeleton onClose={() => { setSelectedId(null); setDrawerNotFound(false); }} loading={drawerLoading} notFound={drawerNotFound} />
       )}
     </>
   );
