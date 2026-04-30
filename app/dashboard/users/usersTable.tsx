@@ -7,6 +7,7 @@ import Pagination from "@/components/Pagination";
 import ExportButton from "@/components/ExportButton";
 import { User, UserRow } from "@/lib/types";
 import { logout } from "@/app/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -491,6 +492,28 @@ export default function UsersTable({ users, total, page, pageSize, personnelName
 
   const bloodFilter = searchParams.get("bt") ?? "All";
   const organDonorOnly = searchParams.get("od") === "1";
+
+  // Realtime: refresh list on any users table change
+  useEffect(() => {
+    const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel>;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) supabase.realtime.setAuth(session.access_token);
+
+      channel = supabase
+        .channel("users-realtime")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "users" },
+          () => startTransition(() => router.refresh()),
+        )
+        .subscribe();
+    });
+
+    return () => { if (channel) supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Drawer fetch
   useEffect(() => {
