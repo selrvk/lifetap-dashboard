@@ -117,8 +117,8 @@ export async function PATCH(
     if (!VALID_ROLES.includes(v as PersonnelRole)) {
       return NextResponse.json({ error: "Invalid role." }, { status: 422 });
     }
-    // Lock: cannot change the role of an existing admin
-    if (target.role === "admin") {
+    // Lock: cannot demote an existing admin
+    if (target.role === "admin" && v !== "admin") {
       return NextResponse.json(
         { error: "Cannot change the role of an admin account." },
         { status: 422 }

@@ -1,6 +1,6 @@
 # LifeTap — Full System Reference
 
-> Last updated: 2026-04-25  
+> Last updated: 2026-05-01  
 > Use this document as context when continuing development, onboarding contributors, or building new features across either the dashboard or the mobile app.
 
 ---
@@ -506,6 +506,8 @@ All routes require a valid Supabase session + personnel record. Admin-only route
 ```
 app/
   layout.tsx                    Root layout, lang="en-PH", metadata
+  actions/
+    auth.ts                     logout() server action (used by client table components)
   dashboard/
     layout.tsx                  Dashboard shell + IdleGuard
     page.tsx                    Home/stats page
@@ -555,6 +557,7 @@ lib/
 
 components/
   NavBar.tsx                    Top nav with name, role, theme toggle, logout
+  ThemeToggle.tsx               Light/dark toggle pill (used inside NavBar)
   Pagination.tsx                Shared pagination with ellipsis
   ExportButton.tsx              Fetch-based CSV export with 429 toast
 
