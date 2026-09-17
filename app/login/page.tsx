@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { checkPersonnelPhone } from "@/app/actions/auth";
 import Image from "next/image";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -27,13 +28,8 @@ export default function LoginPage() {
       ? phone
       : "+63" + phone;
 
-    const { data: personnel } = await supabase
-      .from("personnel")
-      .select("id")
-      .eq("phone", normalized)
-      .single();
-
-    if (!personnel) {
+    const isRegistered = await checkPersonnelPhone(normalized);
+    if (!isRegistered) {
       setError("This number is not registered as personnel.");
       return;
     }
