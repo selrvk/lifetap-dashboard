@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import Pagination from "@/components/Pagination";
 import ExportButton from "@/components/ExportButton";
@@ -666,7 +667,10 @@ export default function UsersTable({ users, total, page, pageSize, personnelName
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    {["Name", "Age / DOB", "Blood", "Location", "Conditions", "Allergies", "Medications", "Status"].map((col) => (
+                    {[
+                      "Name", "Age / DOB", "Blood", "Location", "Conditions", "Allergies", "Medications", "Status",
+                      ...(personnelRole === "admin" ? ["Consent"] : []),
+                    ].map((col) => (
                       <th key={col}>{col}</th>
                     ))}
                   </tr>
@@ -674,7 +678,7 @@ export default function UsersTable({ users, total, page, pageSize, personnelName
                 <tbody>
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: "64px 0", textAlign: "center", color: "var(--text-5)", fontSize: 14 }}>
+                      <td colSpan={personnelRole === "admin" ? 9 : 8} style={{ padding: "64px 0", textAlign: "center", color: "var(--text-5)", fontSize: 14 }}>
                         No records match your filters.
                       </td>
                     </tr>
@@ -739,6 +743,17 @@ export default function UsersTable({ users, total, page, pageSize, personnelName
                             </Badge>
                           </div>
                         </td>
+
+                        {personnelRole === "admin" && (
+                          <td style={{ padding: "14px 16px" }} onClick={(e) => e.stopPropagation()}>
+                            <Link
+                              href={`/dashboard/consent/${user.id}`}
+                              style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none", whiteSpace: "nowrap" }}
+                            >
+                              History →
+                            </Link>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}

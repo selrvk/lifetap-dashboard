@@ -25,6 +25,7 @@ export type User = {
   consent_given_at:     string | null;
   consent_version:      string | null;
   consent_withdrawn_at: string | null;
+  consent_details:      ConsentChoices | null;
 };
  
 // Slim type for the users list — PII-heavy fields are excluded and only
@@ -44,6 +45,49 @@ export type Personnel = {
   is_active: boolean;
   created_at: string;
   last_login: string | null;
+};
+
+// ─── Consent history (DPA / RA 10173 accountability) ────────────────────────
+// Table `public.consent_events`, created by the mobile repo's migration.
+// Append-only — the dashboard never writes to it.
+
+export type ConsentEventType =
+  | "given"
+  | "renewed"
+  | "changed"
+  | "cloud_backup_given"
+  | "withdrawn"
+  | "account_deleted";
+
+export type ConsentGuardian = {
+  name: string;
+  relationship: string;
+};
+
+export type ConsentChoices = {
+  smsAlerts?: boolean;
+  cloudBackup?: boolean;
+  contactsConfirmed?: boolean;
+  guardian?: ConsentGuardian | null;
+};
+
+export type ConsentEvent = {
+  id: string;               // "ce-…" (app) or "srv-…" (server)
+  owner_id: string;         // Supabase auth user id — no FK, outlives a deleted account
+  profile_id: string | null; // users.id at the time of the event
+  event: ConsentEventType;
+  notice_version: string;
+  choices: ConsentChoices;
+  occurred_at: string;      // phone clock
+  recorded_at: string;      // server clock
+};
+
+// Slim projection of `users` used to label a consent event's owner.
+export type ConsentPersonRef = {
+  id: string;
+  n: string;
+  phn: string;
+  cty: string | null;
 };
 
 export type Report = {

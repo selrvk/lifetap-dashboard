@@ -3,14 +3,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { CurrentPersonnel } from "@/lib/auth/personnel";
 
 /**
- * Export rate limit — 10 combined exports (users + personnel + reports)
- * per actor per rolling 60-minute window.
+ * Export rate limit — 10 combined exports (users + personnel + reports +
+ * consent history) per actor per rolling 60-minute window.
  *
  * Uses the audit_log table so no extra infrastructure is needed.
  * The check is per-actor (not per-IP) because the threat model is a
  * single compromised account bulk-exporting PII, not a shared-IP scenario.
  */
-const EXPORT_ACTIONS = ["export_users", "export_personnel", "export_reports"] as const;
+const EXPORT_ACTIONS = ["export_users", "export_personnel", "export_reports", "export_consent_history"] as const;
 const LIMIT = 10;
 const WINDOW_MS = 60 * 60 * 1000; // 1 hour
 

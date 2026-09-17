@@ -17,13 +17,15 @@ function formatDateTime(iso: string) {
 }
 
 const ACTION_LABELS: Record<string, string> = {
-  view_dashboard:        "View dashboard",
-  list_users:            "List users",
-  list_personnel:        "List personnel",
-  list_reports:          "List reports",
-  view_user_profile:     "View user profile",
-  view_personnel_profile:"View personnel profile",
-  view_report:           "View report",
+  view_dashboard:          "View dashboard",
+  list_users:              "List users",
+  list_personnel:          "List personnel",
+  list_reports:            "List reports",
+  view_user_profile:       "View user profile",
+  view_personnel_profile:  "View personnel profile",
+  view_report:             "View report",
+  view_consent_history:    "View consent history",
+  export_consent_history:  "Export consent history",
 };
 
 const ALL_ACTIONS = ["All", ...Object.keys(ACTION_LABELS)];
@@ -34,6 +36,8 @@ const ACTION_VARIANT: Record<string, BadgeVariant> = {
   view_user_profile:      "red",
   view_personnel_profile: "purple",
   view_report:            "amber",
+  view_consent_history:   "purple",
+  export_consent_history: "amber",
   list_users:             "blue",
   list_personnel:         "blue",
   list_reports:           "blue",
